@@ -31,33 +31,42 @@ title('Modulated Signal');
 xlabel('time');
 ylabel('amplitude')
 
+    
+
+
+
+
+
+
+
+
 
 
 
 FM ---------------------------------------------------------
 
-%Phase Modulation
+%Frequency Modulation
 clc;
 close all;
 clear all;
 Vc=10;
 Vm=5;
-fc=15;
+fc=20;
 fm=2;
-t=0:0.0001:02;
+t=0:0.0001:2;
 thetac=0;
 thetam=0;
-kp= 1;
-mp=(kp*Vm);
+kf =15;
+mf=(kf*Vm)/(2*pi*fm);
 %Carrier Signal;
 vc = Vc*sin(2*pi*fc*t + thetac);
 %Modulating signal;
-vm=Vm*sin(2*pi*fm*t + thetam);
+vm=Vm*cos(2*pi*fm*t + thetam);
 %Modulated Signal
-vf=Vc*sin(2*pi*fc*t + mp*sin(2*pi*fm*t));
+vf=Vc*sin(2*pi*fc*t + mf*sin(2*pi*fm*t));
 
 subplot(3,1,1)
-plot(t,vm);
+plot(t,vm, 'g');
 axis([0 3 -Vm-2 +Vm+2]);
 xlabel('Time(sec)');
 ylabel('Amplitude(volts)')
@@ -65,7 +74,7 @@ title('Modulating signal')
 grid on;
 
 subplot(3,1,2)
-plot(t,vc);
+plot(t,vc, 'r');
 axis([0 3 -Vc-2 +Vc+2]);
 xlabel('Time(sec)');
 ylabel('Amplitude(volts)')
@@ -73,16 +82,15 @@ title('Carrier signal')
 grid on;
 
 subplot(3,1,3)
-plot(t,vf);
+plot(t,vf, 'b');
 axis([0 3 -Vc-2 +Vc+2]);
 xlabel('Time(sec)');
 ylabel('Amplitude(volts)')
 title('Modulated signal')
 grid on;
 
-
-
 PM ---------------------------------------------------------%Phase Modulation
+%Phase Modulation
 clc;
 close all;
 clear all;
@@ -133,318 +141,339 @@ clc;
 clear all;
 close all;
 
-bitstream=[1 0 1 1 0];
-n=length(bitstream);
-highlogiclevelvoltage=+5;
-lowlogiclevelvoltage=-5;
-sampleperbit=100;
-t=0:0.01:n;
+bitstream =[0 1 0 0 1];
+n = length(bitstream);
+sampleperbit = 100; % 0 and 1 k present korte kototi bit nibo
+highlogicvoltlevel = +5;
+lowlogicvoltlevel = -5;
+t = 0:1/sampleperbit:n; % o to n, per part e 100 ta value
 
-for i=1:1:n
+for i = 1:1:n
     if bitstream(i)==1
-        digitalSignalvoltage(i)=highlogiclevelvoltage;
+        digitalsignalvoltage(i)=highlogicvoltlevel;
     else
-        digitalSignalvoltage(i)=lowlogiclevelvoltage;
+        digitalsignalvoltage(i)=lowlogicvoltlevel;
     end
 end
+
 totalsample=1:1:(n+1)*sampleperbit;
-for i=1:n
-    for j=i:0.1:i+1
-        digitalsignal(totalsample(i*sampleperbit:(i+1)*sampleperbit))= digitalSignalvoltage(i);
-    end 
+for i=1:1:n
+    for j=i:1/sampleperbit:i+1
+        digitalsignal(totalsample(i*sampleperbit:(i+1)*sampleperbit))=digitalsignalvoltage(i);
+    end
 end
 digitalsignal=digitalsignal(sampleperbit:end);
-subplot(4,1,1);
-plot(t,digitalsignal);
-axis([-0.5 n+0.5 -6 +6]);
+subplot(3,1,1);
+plot(t,digitalsignal,'linewidth',2);
+axis([-0.05 n+0.05 lowlogicvoltlevel-1 highlogicvoltlevel+1]);
 xlabel('Time(sec)');
-ylabel('Amplitude(volts)');
-title('Message Signal');
+ylabel('Amplitude(volt)');
+title('Digital Input Signal');
 grid on;
-hold on;
-%carrier signal
-Ac=5;
-fc=10;
+
+%analog carrier signal
+Vc=5;
+fc=5;
 thetac=0;
-carriersignal=Ac.*cos(2*pi*fc*t);
-subplot(4,1,2);
+carriersignal=Vc.*sin(2*pi*fc*t + thetac); %t ager value tai. karon x axis e same sample lagbe
+subplot(3,1,2);
 plot(t,carriersignal);
-axis([-0.5 n+0.5 -6 +6]);
 xlabel('Time(sec)');
-ylabel('Amplitude(volts)');
+ylabel('Amplitude(volt)');
 title('Carrier Signal');
 grid on;
 
-%Modulated Signal
-amplitudecomponentforsymbolone=Ac+2;
-amplitudecomponentforsymbolzero=Ac-2;
-for i=1:1:(n*sampleperbit+1)
-    if digitalsignal(i)==highlogiclevelvoltage
+%For BASK
+amplitudeDeviation = 2.0;
+amplitudecomponentforsymbolone = Vc + amplitudeDeviation;
+amplitudecomponentforsymbolzero = Vc - amplitudeDeviation;
+phasecomponent=0;
+
+for i=1:1:(n*sampleperbit+1)% 1 to 501 cz ager t value 501
+    if digitalsignal(i)==highlogicvoltlevel
         amplitudecomponent(i)=amplitudecomponentforsymbolone;
     else
-          amplitudecomponent(i)=amplitudecomponentforsymbolzero;
+        amplitudecomponent(i)=amplitudecomponentforsymbolzero;
     end
 end
-modulatedsignal=amplitudecomponent.*sin(2*pi*fc*t+thetac);
-
-subplot(4,1,3);
+modulatedsignal=amplitudecomponent.*sin(2*pi*fc*t + phasecomponent);
+subplot(3,1,3);
 plot(t,modulatedsignal);
-axis([-0.5 n+0.5 -6 +6]);
 xlabel('Time(sec)');
-ylabel('Amplitue(volts)');
+ylabel('Amplitude(volt)');
 title('Modulated Signal');
 grid on;
 
-%OOK
-for i=1:1:(n*sampleperbit+1)
-    if digitalsignal(i)==highlogiclevelvoltage
-        amplitudecomponent(i)=Ac;
-    else
-         amplitudecomponent(i)=0;
-    end
-end
-
-ooksignal=amplitudecomponent.*sin(2*pi*fc*t+thetac);
-subplot(4,1,4);
-plot(t,ooksignal);
-axis([-0.5 n+0.5 -6 +6]);
-xlabel('Time(sec)');
-ylabel('Amplitude(volts)');
-title('On Off Keying');
-grid on;
 
 
 
 BFSK ---------------------------------------------------------
+%BFSK
 clc;
 clear all;
 close all;
 
-bitstream=[1 0 1 1 0];
-n=length(bitstream);
-highlogiclevelvoltage=+5;
-lowlogiclevelvoltage=-5;
-sampleperbit=100;
-t=0:0.01:n;
+bitstream =[0 1 0 1 1];
+n = length(bitstream);
+sampleperbit = 100; % 0 and 1 k present korte kototi bit nibo
+highlogicvoltlevel = +5;
+lowlogicvoltlevel = -5;
+t = 0:1/sampleperbit:n; % o to n, per part e 100 ta value
 
-for i=1:1:n
+for i = 1:1:n
     if bitstream(i)==1
-        digitalsignalvoltage(i)=highlogiclevelvoltage;
+        digitalsignalvoltage(i)=highlogicvoltlevel;
     else
-      digitalsignalvoltage(i)=lowlogiclevelvoltage;
-    end 
+        digitalsignalvoltage(i)=lowlogicvoltlevel;
+    end
 end
+
 totalsample=1:1:(n+1)*sampleperbit;
-
-
-for i=1:n
-    for j=i:0.1:i+1
-        digitalsignal(i*sampleperbit:(i+1)*sampleperbit)=digitalsignalvoltage(i);
+for i=1:1:n
+    for j=i:1/sampleperbit:i+1
+        digitalsignal(totalsample(i*sampleperbit:(i+1)*sampleperbit))=digitalsignalvoltage(i);
     end
 end
 digitalsignal=digitalsignal(sampleperbit:end);
 subplot(3,1,1);
 plot(t,digitalsignal);
-axis([-0.5 n+0.5 -6 +6]);
+axis([-0.05 n+0.05 lowlogicvoltlevel-1 highlogicvoltlevel+1]);
 xlabel('Time(sec)');
-ylabel('Amplitude(volts)');
-title('Message Signal');
+ylabel('Amplitude(volt)');
+title('Digital Input Signal');
 grid on;
 
-Ac=5;
-fc=10;
+%analog carrier signal
+Vc=5;
+fc=5;
 thetac=0;
-carriersignal=Ac.*sin(2*pi*fc*t+thetac);
+carriersignal=Vc.*sin(2*pi*fc*t + thetac); %t ager value tai. karon x axis e same sample lagbe
 subplot(3,1,2);
 plot(t,carriersignal);
-axis([-0.5 n+0.5 -6 +6]);
+axis([-0.05 n+0.05 -Vc-0.5 +Vc+0.5]);
 xlabel('Time(sec)');
-ylabel('Amplitude(volts)');
+ylabel('Amplitude(volt)');
 title('Carrier Signal');
 grid on;
 
-frequencyseperation=10;
-phasecomponentforsymbolone=2*pi*(frequencyseperation/2);
-phasecomponentforsymbolzero=-2*pi*(frequencyseperation/2);
+delta=2;%frequency deviation
+phasecomponentforsymbolone = 2*pi*(delta/2);
+phasecomponentforsymbolzero = -2*pi*(delta/2);
+amplitudecomponent=1;
 
-for i=1:1:(n*sampleperbit+1)
-    if digitalsignal(i)==highlogiclevelvoltage
+for i=i:1:(n*sampleperbit+1)% 1 to 501 cz ager t value 501
+    if digitalsignal(i)==highlogicvoltlevel
         phasecomponent(i)=phasecomponentforsymbolone;
     else
-        phasecomponent(i)=phasecomponentforsymbolzero;
+       phasecomponent(i)=phasecomponentforsymbolzero;
     end
 end
-amplitudecomponent=1;
-modulatedsignal=amplitudecomponent.*Ac.*cos((2.*pi.*fc + phasecomponent).*t);
+modulatedsignal=amplitudecomponent.*sin(2*pi*fc*t + phasecomponent.*t);
 subplot(3,1,3);
 plot(t,modulatedsignal);
-axis([-0.5 n+0.5 -6 +6]);
+axis([-0.05 n+0.05 -1.5 +1.5]);
 xlabel('Time(sec)');
-ylabel('Amplitude(volts)');
+ylabel('Amplitude(volt)');
 title('Modulated Signal');
 grid on;
 
-
 BPSK ---------------------------------------------------------clc;
+%BPSK
+clc;
 clear all;
 close all;
-bitstream=[1 0 1 1 0];
-n=length(bitstream);
-highlogiclevelvoltage=+5;
-lowlogiclevelvoltage=-5;
-sampleperbit=100;
-t=0:0.01:n;
-for i=1:1:n
- if bitstream(i)==1
- digitalsignalvoltage(i)=highlogiclevelvoltage;
- else
- digitalsignalvoltage(i)=lowlogiclevelvoltage;
- end
+
+bitstream =[0 1 0 1 1];
+n = length(bitstream);
+sampleperbit = 100; % 0 and 1 k present korte kototi bit nibo
+highlogicvoltlevel = +5;
+lowlogicvoltlevel = -5;
+t = 0:1/sampleperbit:n; % o to n, per part e 100 ta value
+
+for i = 1:1:n
+    if bitstream(i)==1
+        digitalsignalvoltage(i)=highlogicvoltlevel;
+    else
+        digitalsignalvoltage(i)=lowlogicvoltlevel;
+    end
 end
+
 totalsample=1:1:(n+1)*sampleperbit;
-for i=1:n
- for j=i:.1:i+1
-digitalsignal(i*sampleperbit:(i+1)*sampleperbit)=digitalsignalvoltage(i);
- end 
+for i=1:1:n
+    for j=i:1/sampleperbit:i+1
+        digitalsignal(totalsample(i*sampleperbit:(i+1)*sampleperbit))=digitalsignalvoltage(i);
+    end
 end
 digitalsignal=digitalsignal(sampleperbit:end);
 subplot(3,1,1);
-plot(t,digitalsignal);
-title('Message Signal');
+plot(t,digitalsignal,'linewidth',2);
+axis([-0.05 n+0.05 lowlogicvoltlevel-1 highlogicvoltlevel+1]);
+xlabel('Time(sec)');
+ylabel('Amplitude(volt)');
+title('Digital Input Signal');
 grid on;
-hold on;
-%carrier signal
-Ac=5;
-fc=10;
-carriersignal=Ac.*cos(2*pi*fc*t);
+
+%analog carrier signal
+Vc=5;
+fc=5;
+thetac=0;
+carriersignal=Vc.*sin(2*pi*fc*t + thetac); %t ager value tai. karon x axis e same sample lagbe
 subplot(3,1,2);
 plot(t,carriersignal);
+axis([-0.05 n+0.05 -Vc-0.5 +Vc+0.5]);
 xlabel('Time(sec)');
-ylabel('Amplitude(V)');
+ylabel('Amplitude(volt)');
 title('Carrier Signal');
 grid on;
-%modulated signal
-phasecomponentforsymbolone=0;
-phasecomponentforsymbolzero=pi;
-for i=1:1:(n*sampleperbit+1)
- if digitalsignal(i)==highlogiclevelvoltage
- phasecomponet(i)= phasecomponentforsymbolone;
- else
- phasecomponet(i)=phasecomponentforsymbolzero;
- end
+
+phasecomponentforsymbolone = pi;
+phasecomponentforsymbolzero = 0;
+amplitudecomponent=1;
+
+for i=i:1:(n*sampleperbit+1)% 1 to 501 cz ager t value 501
+    if digitalsignal(i)==highlogicvoltlevel
+        phasecomponent(i)=phasecomponentforsymbolone;
+    else
+       phasecomponent(i)=phasecomponentforsymbolzero;
+    end
 end
- amplitudecomponent=1;
- modulatedsignal=amplitudecomponent.*cos(2.*pi.*fc.*t + phasecomponet);
+modulatedsignal=amplitudecomponent.*sin(2*pi*fc*t + phasecomponent);
 subplot(3,1,3);
 plot(t,modulatedsignal);
+axis([-0.05 n+0.05 -1.5 +1.5]);
 xlabel('Time(sec)');
-ylabel('Amplitude(V)');
+ylabel('Amplitude(volt)');
 title('Modulated Signal');
 grid on;
+
 
 
 
 PCM ---------------------------------------------------------
 clc;
-close all;
 clear all;
-% Analog signal
-a= 8;
-fm= 2;
-phim=0;
-tmin= 0;
-tmax= 2;
-samplepertime= 100;
-t= tmin:(1/samplepertime):tmax;
-analog_signal= a.*sin(2*pi*fm*t +phim);
+close all;
+A=5;
+f=1;
+minTime = 0;
+maxTime = 1;
+samplePerTime = 100;
+theta = 0;
+t = minTime: 1/samplePerTime : maxTime;
+analogSignal=A*sin(2*pi*f*t + theta);
 subplot(4,1,1);
-plot(t,analog_signal);
-title('Analog Signal');
+plot(t,analogSignal)
+axis([minTime maxTime -A-1 +A+1]);
+xlabel('Time(sec)');
+ylabel('Amplitude(volt)');
+title('analogSignal');
+grid on;
+
 %sampling
-samplingrate= 50;
-sampletime = tmin:(1/samplingrate):tmax;
-sampledsignal= a.*sin(2*pi*fm*sampletime+phim);
+samplingRate = 30*f;
+totalSample = minTime : 1/samplingRate : maxTime;
+sampledSignal = A*sin(2*pi*f*totalSample + theta);
 subplot(4,1,2);
-stem(sampletime,sampledsignal);
-title('Sampled signal');
-%Quantization
-n= 3;
-L= 2^n;
-vmax= a;
-vmin= -a;
-delta = (vmax-vmin)/L;
-partition= vmin:delta:vmax;
-codebook= vmin-(delta/2):delta:vmax+(delta/2);
-[index,quants]= quantiz(sampledsignal,partition,codebook);
-%display(sampledsignal)
-%display(quants)
+stem(totalSample,sampledSignal);
+axis([minTime maxTime -A-1 +A+1]);
+xlabel('Time(sec)');
+ylabel('Amplitude(volt)');
+title('Sampled Signal');
+grid on;
+%display(sampledSignal);
+
+n = 8;
+L = 2^n;%L-Level
+minV = -A;
+maxV = +A;
+delta =(maxV-minV)/L;
+partition = minV : delta : maxV;
+%disp(partition);
+codebook = minV - (delta/2) : delta : maxV + (delta/2);
+%disp(codebook);
+[index, quants]= quantiz(sampledSignal, partition, codebook);
+%disp(index);
+%display(quants);
+
 subplot(4,1,3);
-stem(sampletime,quants);
+stem(totalSample, quants);
+axis([minTime maxTime -A-1 +A+1]);
+xlabel('Time(sec)');
+ylabel('Amplitude(volt)');
 title('Quantized Signal');
-%Digital Output
-codematrix= de2bi(index, 'left-msb');
+grid on;
+
+codematrix = de2bi(index,'left-msb');
 k=1;
-for i= 1:1:length(index)
-for j= 1:1:n
-codevector(k)=codematrix(i,j);
-k=k+1;
+for i=1:1:length(index)
+    for j=1:1:n
+        codevector(k)=codematrix(i,j);
+        k=k+1;
+    end
 end
-end
-codevectorlength= length( codevector);
-bittime=tmin:tmax/(codevectorlength-1):tmax;
+%disp(codevector);
 subplot(4,1,4);
-stairs(bittime,codevector);
-axis([-0.01 tmax+0.01 -0.1 1.1]);
-title('Digital Output Signal');
+stairs(codevector);
+
+
+
+
 
 PAM ---------------------------------------------------------
 clc;
 clear all;
 close all;
 Am=1;
-fm=2;
+fm=0.9;
 phim=0;
-tmin=0;
-tmax=2;
-samplingrate=1000;
-t= tmin:1/samplingrate:tmax;
-modulatingsignal=Am*cos(2*pi*fm*t + phim);
+minTime=0;
+maxTime=2;
+samplingRate=1000;
+t=minTime:1/samplingRate:maxTime;
+modulatingSignal = Am*cos(2*pi*fm*t + phim);
 subplot(4,1,1);
-plot(t,modulatingsignal);
+plot(t,modulatingSignal);
+axis([-minTime-0.05 maxTime+0.05 -Am-.5 +Am+.5]);
 xlabel('Time(sec)');
-ylabel('Amplitude(V)');
+ylabel('Amplitude(volt)');
 title('Modulating Signal');
-%carrier signal
-fc=25;
+grid on;
+
+%carrier
+fc=20;
 Ac=1;
-carrierpulses=Ac*square(2*pi*fc*t)+Ac;\
+carrierSignal=Ac*square(2*pi*fc*t)+Ac;
 subplot(4,1,2);
-plot(t,carrierpulses);
-axis([-tmin-0.01 tmax+0.01 -Ac-1 2*Ac+1]);
-title('Carrier Pulses');
+plot(t,carrierSignal);
+axis([-minTime-0.05 maxTime+0.05 -Ac+0.5 +Ac+2])
 xlabel('Time(sec)');
-ylabel('Amplitude(V)');
-%double sideband signal
-doublesidebandmodulatedsignal=modulatingsignal.*carrierpulses;
-subplot(4,1,3);
-plot(t,doublesidebandmodulatedsignal);
-xlabel('Time(sec)');
-ylabel('Amplitude(V)');
-title('DSB signal');
-%single sideband signal
-singlesidebandmodulatedsignal=[];
-for i=1:1:length(doublesidebandmodulatedsignal)
-if doublesidebandmodulatedsignal(i)==0
-    singlesidebandmodulatedsignal=[singlesidebandmodulatedsignal,doublesidebandmodulatedsignal(i)];
-else
-singlesidebandmodulatedsignal=[singlesidebandmodulatedsignal,doublesidebandmodulatedsignal(i)+3*Ac*Am];
+ylabel('Amplitude(volt)');
+title('Carrier Signal');
+grid on;
+
+doubleSidebandModulatedSignal = modulatingSignal.*carrierSignal;
+subplot(4,1,3)
+plot(t,doubleSidebandModulatedSignal);
+axis([-minTime-0.05 maxTime+0.05 -2*Ac*Am-0.5 2*Ac*Am+0.5]);
+
+% Generate single-sideband modulated signal
+singlesidebandmodulatingsignal  = [];
+for i = 1:1:length(doubleSidebandModulatedSignal)
+    if doubleSidebandModulatedSignal(i) == 0
+        singlesidebandmodulatingsignal = [singlesidebandmodulatingsignal, doubleSidebandModulatedSignal(i)];
+    else
+        singlesidebandmodulatingsignal = [singlesidebandmodulatingsignal, doubleSidebandModulatedSignal(i) + 3 * Ac * Am];
+    end
 end
-end
+% Plot single-sideband modulated signal
 subplot(4,1,4);
-plot(t, singlesidebandmodulatedsignal);
-xlabel('Time(sec)');
-ylabel('Amplitude(V)');
-title('SSB Signal')
+plot(t, singlesidebandmodulatingsignal);
+xlabel('Time (s)');
+ylabel('Amplitude');
+title('Single-Sideband Modulated Signal');
+
+
+
 
 PWM----------------------------------------------
 clc;
